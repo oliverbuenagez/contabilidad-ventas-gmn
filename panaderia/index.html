@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panadería - Registro de Ventas y Contabilidad</title>
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+  <!-- Encabezado Principal -->
+  <header class="header-principal">
+    <div class="header-container">
+      <div class="logo-wrap">
+        <span class="icon">🥖</span>
+        <span>Panadería Artesanal</span>
+      </div>
+      <div class="header-acciones">
+        <button class="btn btn-secondary btn-sm" onclick="window.cargarDatosDemo()" title="Cargar panes y ventas de demostración">
+          ✨ Cargar datos de ejemplo
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navegación de Pestañas -->
+  <nav class="nav-secciones">
+    <button class="nav-link-btn activo" data-seccion="ventas">
+      <span>💰</span> Nueva Venta
+    </button>
+    <button class="nav-link-btn" data-seccion="historial">
+      <span>📜</span> Historial de Ventas
+    </button>
+    <button class="nav-link-btn" data-seccion="estadisticas">
+      <span>📊</span> Dashboard & Contabilidad
+    </button>
+    <button class="nav-link-btn" data-seccion="productos">
+      <span>🍞</span> Productos
+    </button>
+    <button class="nav-link-btn" data-seccion="clientes">
+      <span>👥</span> Clientes
+    </button>
+  </nav>
+
+  <!-- Contenedor Principal de la App -->
+  <main class="app-container">
+
+    <!-- SECCIÓN 1: NUEVA VENTA -->
+    <section id="seccion-ventas" class="app-seccion activa">
+      <div class="card">
+        <div class="card-header-flex">
+          <h3 id="titulo-formulario-venta">Registrar Nueva Venta</h3>
+          <button id="btn-cancelar-edicion-venta" class="btn btn-secondary btn-sm" style="display: none;">
+            ✕ Cancelar Edición
+          </button>
+        </div>
+
+        <form id="form-nueva-venta" onsubmit="return false;">
+          <div class="form-grid-3 mb-3">
+            <div>
+              <label for="venta-fecha" class="form-label">Fecha de venta</label>
+              <input type="date" id="venta-fecha" class="form-control" required>
+            </div>
+            <div>
+              <label for="venta-cliente" class="form-label d-flex justify-content-between">
+                <span>Cliente</span>
+                <a href="javascript:void(0)" id="btn-venta-crear-cliente-rapido" style="color: var(--color-primario); font-weight: 600;">+ Nuevo</a>
+              </label>
+              <select id="venta-cliente" class="form-select">
+                <option value="">(Cliente anónimo / Mostrador)</option>
+              </select>
+            </div>
+            <div>
+              <label for="venta-notas" class="form-label">Notas u observaciones (opcional)</label>
+              <input type="text" id="venta-notas" class="form-control" placeholder="Ej. Encargo para llevar...">
+            </div>
+          </div>
+
+          <!-- Selector de producto para agregar -->
+          <div class="card p-3 mb-3" style="background-color: #faf5ee; border-color: var(--color-borde);">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="form-label m-0 fw-bold">🥖 ¿Qué pan va a comprar el cliente?</label>
+              <a href="javascript:void(0)" onclick="window.navegarSeccion('productos')" style="color: var(--color-primario); font-size: 0.85rem; font-weight: 600;">+ Ir al catálogo de panes</a>
+            </div>
+
+            <div id="aviso-sin-productos" style="display: none;" class="card p-2 mb-2 small text-center" style="background-color: #fef3c7; border-color: #f59e0b;">
+              ⚠️ <strong>Aún no tienes panes registrados en el catálogo.</strong> Ve a la pestaña <a href="javascript:void(0)" onclick="window.navegarSeccion('productos')" class="fw-bold">Productos</a> para registrar tus panes o haz clic en <strong>"✨ Cargar datos de ejemplo"</strong> arriba.
+            </div>
+
+            <div class="d-flex gap-2 flex-wrap align-items-end">
+              <div class="flex-grow-1" style="min-width: 220px;">
+                <label for="venta-sel-producto" class="form-label small text-muted mb-1">Elegir pan:</label>
+                <select id="venta-sel-producto" class="form-select">
+                  <option value="">-- Selecciona el pan aquí --</option>
+                </select>
+              </div>
+
+              <div style="width: 120px;">
+                <label for="venta-input-cantidad" class="form-label small text-muted mb-1">¿Cuántos?:</label>
+                <input type="number" id="venta-input-cantidad" class="form-control text-center" min="1" value="1">
+              </div>
+
+              <button type="button" id="btn-agregar-linea-venta" class="btn btn-primary" style="height: 38px;">
+                ➕ Añadir a la cuenta
+              </button>
+            </div>
+
+            <!-- Botones rápidos de un solo clic -->
+            <div id="contenedor-chips-productos" class="mt-3 pt-2 border-top" style="display: none;">
+              <small class="text-muted d-block mb-1">O haz clic directo para añadir 1 rápido:</small>
+              <div id="chips-productos" class="d-flex gap-2 flex-wrap"></div>
+            </div>
+          </div>
+
+          <!-- Tabla de líneas de venta actual -->
+          <div class="table-responsive mb-3">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Pan / Producto</th>
+                  <th class="text-center">Cantidad</th>
+                  <th class="text-end">Precio cobrado</th>
+                  <th class="text-end">Subtotal</th>
+                  <th class="text-center"></th>
+                </tr>
+              </thead>
+              <tbody id="tabla-lineas-venta">
+                <tr>
+                  <td colspan="5" class="text-center p-4 text-muted">
+                    No hay productos añadidos a esta cuenta todavía.<br>
+                    <small>Elige un pan arriba y haz clic en "Añadir a la cuenta" (o dale directo a "Cobrar y Guardar Venta").</small>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Total en caja y botón de finalización -->
+          <div class="total-caja-card">
+            <div class="total-caja-label">Total a cobrar</div>
+            <div id="venta-total-display" class="total-caja-monto">$ 0</div>
+            <button type="button" id="btn-guardar-venta" class="btn btn-success btn-lg">
+              💾 Cobrar y Guardar Venta
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 2: HISTORIAL DE VENTAS -->
+    <section id="seccion-historial" class="app-seccion">
+      <div class="card">
+        <div class="card-header-flex">
+          <h3>Historial de Ventas</h3>
+          <div class="d-flex gap-2">
+            <button id="btn-limpiar-filtros-ventas" class="btn btn-secondary btn-sm">
+              🔄 Limpiar Filtros
+            </button>
+          </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="form-grid-3 mb-3">
+          <div>
+            <label for="filtro-historial-desde" class="form-label">Desde</label>
+            <input type="date" id="filtro-historial-desde" class="form-control form-control-sm">
+          </div>
+          <div>
+            <label for="filtro-historial-hasta" class="form-label">Hasta</label>
+            <input type="date" id="filtro-historial-hasta" class="form-control form-control-sm">
+          </div>
+          <div>
+            <label for="filtro-historial-cliente" class="form-label">Cliente</label>
+            <select id="filtro-historial-cliente" class="form-select form-select-sm">
+              <option value="todos">Todos los clientes</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="d-flex align-items-center gap-2">
+            <label for="filtro-historial-estado" class="form-label m-0">Estado:</label>
+            <select id="filtro-historial-estado" class="form-select form-select-sm" style="width: auto;">
+              <option value="todas">Todas</option>
+              <option value="activas" selected>Solo Activas</option>
+              <option value="anuladas">Solo Anuladas</option>
+            </select>
+          </div>
+          <div class="text-end">
+            <span id="historial-conteo-ventas" class="badge badge-unidad">0 ventas</span>
+            <span class="ms-2 fw-bold">Total activas: <span id="historial-total-filtrado" class="text-success">$ 0</span></span>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th class="text-end">Total</th>
+                <th class="text-center">Estado</th>
+                <th class="text-end">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-historial-ventas">
+              <tr>
+                <td colspan="5" class="text-center p-4 text-muted">Cargando historial...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 3: DASHBOARD & CONTABILIDAD -->
+    <section id="seccion-estadisticas" class="app-seccion">
+      <div class="card">
+        <div class="card-header-flex">
+          <div>
+            <h3>Dashboard Contable</h3>
+            <p class="text-muted small m-0">Métricas clave, análisis de ventas y rendimiento de panes</p>
+          </div>
+          <div class="d-flex gap-2 align-items-center">
+            <label class="form-label m-0">Periodo:</label>
+            <select id="stats-filtro-mes" class="form-select form-select-sm" style="width: 140px;"></select>
+            <select id="stats-filtro-anio" class="form-select form-select-sm" style="width: 90px;"></select>
+          </div>
+        </div>
+
+        <div id="dashboard-contenido">
+          <div class="text-center p-4 text-muted">Calculando métricas del periodo...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 4: PRODUCTOS -->
+    <section id="seccion-productos" class="app-seccion">
+      <div class="card">
+        <div class="card-header-flex">
+          <div>
+            <h3>Catálogo de Panes</h3>
+            <p class="text-muted small m-0">Administra los panes y presentaciones disponibles para venta</p>
+          </div>
+          <button id="btn-nuevo-producto" class="btn btn-primary">
+            ➕ Nuevo Pan / Producto
+          </button>
+        </div>
+
+        <div class="form-grid-2 mb-3">
+          <div>
+            <input type="text" id="busqueda-producto" class="form-control form-control-sm" placeholder="🔍 Buscar por nombre o tipo de pan...">
+          </div>
+          <div class="d-flex justify-content-end align-items-center gap-2">
+            <label class="form-label m-0">Mostrar:</label>
+            <select id="filtro-estado-producto" class="form-select form-select-sm" style="width: 140px;">
+              <option value="activos" selected>Solo Activos</option>
+              <option value="archivados">Archivados</option>
+              <option value="todos">Todos</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Pan / Nombre</th>
+                <th>Presentación</th>
+                <th class="text-end">Precio Base</th>
+                <th class="text-center">Estado</th>
+                <th class="text-end">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-productos">
+              <tr>
+                <td colspan="5" class="text-center p-4 text-muted">Cargando catálogo...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 5: CLIENTES -->
+    <section id="seccion-clientes" class="app-seccion">
+      <div class="card">
+        <div class="card-header-flex">
+          <div>
+            <h3>Directorio de Clientes</h3>
+            <p class="text-muted small m-0">Clientes frecuentes y su historial de compras</p>
+          </div>
+          <button id="btn-nuevo-cliente" class="btn btn-primary">
+            ➕ Registrar Cliente
+          </button>
+        </div>
+
+        <div class="form-grid-2 mb-3">
+          <div>
+            <input type="text" id="busqueda-cliente" class="form-control form-control-sm" placeholder="🔍 Buscar por nombre, teléfono o barrio...">
+          </div>
+          <div class="d-flex justify-content-end align-items-center gap-2">
+            <label class="form-label m-0">Mostrar:</label>
+            <select id="filtro-estado-cliente" class="form-select form-select-sm" style="width: 140px;">
+              <option value="activos" selected>Solo Activos</option>
+              <option value="archivados">Archivados</option>
+              <option value="todos">Todos</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Cliente e Información</th>
+                <th class="text-center">Estado</th>
+                <th class="text-end">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-clientes">
+              <tr>
+                <td colspan="3" class="text-center p-4 text-muted">Cargando clientes...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: PRODUCTO -->
+  <div id="modal-producto" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h4 id="modal-producto-titulo">Nuevo Producto</h4>
+        <button type="button" id="btn-cerrar-modal-producto" class="btn-cerrar">✕</button>
+      </div>
+      <form id="form-producto">
+        <div class="modal-body">
+          <input type="hidden" id="prod-id">
+          
+          <div class="mb-3">
+            <label for="prod-nombre" class="form-label">Nombre del pan / producto *</label>
+            <input type="text" id="prod-nombre" class="form-control" placeholder="Ej. Croissant mantequilla, Roscas x5" required>
+          </div>
+
+          <div class="form-grid-2 mb-3">
+            <div>
+              <label for="prod-presentacion" class="form-label">Presentación *</label>
+              <select id="prod-presentacion" class="form-select">
+                <option value="unidad">Unidad</option>
+                <option value="paquete">Paquete</option>
+              </select>
+            </div>
+            <div id="grupo-unidades-paquete" style="display: none;">
+              <label for="prod-unidades" class="form-label">Unidades por paquete</label>
+              <input type="number" id="prod-unidades" class="form-control" min="1" value="1">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="prod-precio" class="form-label">Precio base en pesos ($ COP) *</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input type="number" id="prod-precio" class="form-control" min="0" step="50" placeholder="Ej. 1500" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="btn-cancelar-producto" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" id="btn-guardar-producto" class="btn btn-primary">Guardar Producto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CLIENTE -->
+  <div id="modal-cliente" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h4 id="modal-cliente-titulo">Nuevo Cliente</h4>
+        <button type="button" id="btn-cerrar-modal-cliente" class="btn-cerrar">✕</button>
+      </div>
+      <form id="form-cliente">
+        <div class="modal-body">
+          <input type="hidden" id="cli-id">
+          
+          <div class="mb-3">
+            <label for="cli-nombre" class="form-label">Nombre del cliente *</label>
+            <input type="text" id="cli-nombre" class="form-control" placeholder="Ej. Marta Gómez" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="cli-telefono" class="form-label">Teléfono / Celular (opcional)</label>
+            <input type="tel" id="cli-telefono" class="form-control" placeholder="Ej. 3101234567">
+          </div>
+
+          <div class="form-grid-2 mb-3">
+            <div>
+              <label for="cli-barrio" class="form-label">Barrio (opcional)</label>
+              <input type="text" id="cli-barrio" class="form-control" placeholder="Ej. El Prado">
+            </div>
+            <div>
+              <label for="cli-direccion" class="form-label">Dirección (opcional)</label>
+              <input type="text" id="cli-direccion" class="form-control" placeholder="Ej. Calle 10 # 5-20">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="btn-cancelar-cliente" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" id="btn-guardar-cliente" class="btn btn-primary">Guardar Cliente</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: HISTORIAL POR CLIENTE -->
+  <div id="modal-historial-cliente" class="modal-backdrop">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h4 id="historial-cliente-titulo">Historial del Cliente</h4>
+        <button type="button" id="btn-cerrar-historial-cliente" class="btn-cerrar">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="historial-cliente-resumen"></div>
+        <div id="historial-cliente-contenido"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: DETALLE DE VENTA -->
+  <div id="modal-detalle-venta" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h4>Detalle de Venta</h4>
+        <button type="button" id="btn-cerrar-detalle-venta" class="btn-cerrar">✕</button>
+      </div>
+      <div class="modal-body" id="detalle-venta-contenido"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRMACIÓN GENÉRICA -->
+  <div id="modal-confirmacion" class="modal-backdrop">
+    <div class="modal-dialog" style="max-width: 440px;">
+      <div class="modal-header">
+        <h4 id="modal-confirm-titulo">Confirmación</h4>
+      </div>
+      <div class="modal-body">
+        <p id="modal-confirm-mensaje" class="m-0"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="modal-confirm-btn-cancel" class="btn btn-secondary">Cancelar</button>
+        <button type="button" id="modal-confirm-btn-ok" class="btn btn-primary">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenedor flotante de avisos Toast -->
+  <div id="toast-container"></div>
+
+  <!-- Navegación independiente de Firebase (funciona siempre) -->
+  <script>
+    // Este script no usa módulos ni Firebase, funciona aunque fallen los imports
+    function navegar(seccionId) {
+      document.querySelectorAll('.app-seccion').forEach(s => s.classList.remove('activa'));
+      document.querySelectorAll('.nav-link-btn').forEach(b => b.classList.remove('activo'));
+      const sec = document.getElementById('seccion-' + seccionId);
+      const btn = document.querySelector('.nav-link-btn[data-seccion="' + seccionId + '"]');
+      if (sec) sec.classList.add('activa');
+      if (btn) btn.classList.add('activo');
+      // Notificar al módulo de app.js si ya cargó
+      if (typeof window.navegarSeccion === 'function') {
+        window.navegarSeccion(seccionId);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.nav-link-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var seccion = btn.getAttribute('data-seccion');
+          if (seccion) navegar(seccion);
+        });
+      });
+    });
+  </script>
+
+  <!-- Inicialización de la aplicación (módulos Firebase) -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
