@@ -107,7 +107,8 @@ export function poblarSelectorProductos() {
   }
 
   if (aviso) aviso.style.display = 'none';
-  if (contChips) contChips.style.display = 'block';
+  // Ocultar los botones rápidos de productos; se conserva el selector normal.
+  if (contChips) contChips.style.display = 'none';
 
   let html = '<option value="">-- Selecciona el pan aquí --</option>';
   productos.forEach(p => {
