@@ -26,6 +26,9 @@ import {
 
 
 
+// Promesa de carga inicial: evita mostrar el aviso antes de consultar Firebase.
+let cargaInicialProductos = null;
+
 // Navegación de secciones
 export function navegarSeccion(seccionId) {
   // Ocultar todas las secciones y desmarcar todos los botones
@@ -45,7 +48,11 @@ export function navegarSeccion(seccionId) {
 
   // Acciones específicas al entrar a una sección (recargar datos)
   if (seccionId === 'ventas') {
-    poblarSelectorProductos();
+    if (cargaInicialProductos) {
+      cargaInicialProductos.then(() => poblarSelectorProductos());
+    } else {
+      poblarSelectorProductos();
+    }
     poblarSelectorClientes();
   } else if (seccionId === 'historial') {
     poblarSelectorClientes();
@@ -57,7 +64,7 @@ export function navegarSeccion(seccionId) {
 window.navegarSeccion = navegarSeccion;
 
 // Función de arranque de la aplicación
-function iniciarApp() {
+async function iniciarApp() {
   console.log('Iniciando sistema de Registro de Ventas de Panadería...');
 
   // ── 1. MÓDULOS DE UI: formularios, modales, filtros ──
@@ -66,10 +73,12 @@ function iniciarApp() {
   configurarModuloVentas();
   inicializarEstadisticas();
 
-  // ── 2. CARGA DE DATOS FIREBASE: independiente, no bloquea UI ──
-  cargarProductos().catch(e => console.warn('cargarProductos:', e.message));
-  cargarClientes().catch(e => console.warn('cargarClientes:', e.message));
+  // ── 2. CARGA DE DATOS FIREBASE ──
+  // Esperar a los productos antes de decidir si el catálogo está vacío.
+  cargaInicialProductos = cargarProductos().catch(e => console.warn('cargarProductos:', e.message));
+  const cargaClientes = cargarClientes().catch(e => console.warn('cargarClientes:', e.message));
   cargarHistorialVentas().catch(e => console.warn('cargarHistorialVentas:', e.message));
+  await Promise.all([cargaInicialProductos, cargaClientes]);
 
   inicializarFormularioVenta();
   poblarSelectorProductos();
